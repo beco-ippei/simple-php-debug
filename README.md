@@ -1,4 +1,4 @@
-php-debug
+simple-php-debug
 =========
 
 PHP-Debugger made by only php. Without use var_dump() and echo() and any browser print functions.
@@ -7,4 +7,4 @@ PHP-Debugger made by only php. Without use var_dump() and echo() and any browser
 License
 -------
 
-Copyright © 2013 beco-ippei. php-debug is licensed under the LGPL.
+Copyright © 2013 beco-ippei. simple-php-debug is licensed under the LGPL.
