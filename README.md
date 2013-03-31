@@ -18,6 +18,7 @@ TODO
 * エラーハンドリング
 * プロンプトに、現在地のざっくりとした情報を見せる (Debuggerのスタック情報?)
 * remove japanese coment and message.
+* get current file and start up point from Backtrace info.
 
 
 License
