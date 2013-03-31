@@ -1,30 +1,55 @@
 <?php
+if (!Debugger::inCLI()) return;
+
+echo "load debugger....\n";
+Debugger::prepare();
+
+array_shift($argv);     // 実行時引数をShiftしておく。
+echo 'execute debugger for > ' . join(' ', $argv) . "\n";
+require_once $argv[0];
+
+#TODO: 終了時にもなにかできるようにした方がいいかも
+#      で、HTTPレスポンスが変数に入っていて見れたり、その他。
+Debugger::postCode();
+exit(0);
+
 /**
  * debugger (like ruby-debug)
  * usage:
  *      eval(Debugger::get());      # debug. stop and run any code on console.
  * NOTE:
- *      use only programmer who knows eval()'s lisk.
+ *   use only programmer who knows eval()'s lisk.
+ *   support php version.4
  */
-#TODO: debuggerで起動していない場合は、Debugger.get() ではパラメータ値などを出力したい。
-#      かつ、debugger利用のためのパラメータLoadを自動で行うスクリプトを生成したい。
-#TODO: readline の導入
-#TODO: command 一覧 (help?) の表示
-echo "load debugger....\n";
 class Debugger
 {
+    /**
+     * for static use
+     * USAGE:
+     * # any codes.....
+     * // stop proccessing and wait input commands
+     * eval(Debugger::get());
+     * # any codes.....
+     */
     function get()
     {
-        if (!defined('STDIN')) {     // 
+        if (!Debugger::inCLI()) {     // 
             #TODO: ここで、Webサーバから起動した時のパラメータ値などを出力する
             return "/* donothing */";
         }
-
         // CLIで実行された
-        $proc = '
-        Debugger::printPosition(__FILE__);
+        return Debugger::debuggerEvalCode(true);
+    }
+
+    function debuggerEvalCode($debugging = false)
+    {
+        $proc = "\$debugger = new Debugger({$debugging});\n";
+        if ($debugging) {
+            $proc .= "\$debugger->printPosition(__FILE__);\n";
+        }
+        $proc .= '
         for ($i=1; $i<100; $i++) {       // 安全装置つき
-            $handle = Debugger::handleInput(__FILE__);
+            $handle = $debugger->handleInput(__FILE__);
             if ($handle == "break") {
                 break;
             } else if (empty($handle)) {
@@ -37,27 +62,89 @@ class Debugger
         return $proc;
     }
 
+    /**
+     * for static use
+     */
+    function prepare()
+    {
+        #TODO: このへんは、クラスor関数化する
+        echo <<<MESSAGE
+-- input parmeters as global variables (\$_REQUEST or \$_COOKIE or else)
+  ex.
+  \$_REQUEST['?????'] = 'hogehoge';
+
+  if ready, type '\q'
+
+MESSAGE;
+        eval(Debugger::debuggerEvalCode());
+    }
+
+    /**
+     * for static use
+     * execute before debugger exit without error.
+     */
+    function postCode()
+    {
+        #TODO: このへんは、クラスor関数化する
+        echo <<<MESSAGE
+-- if watch global variables, you can exec any codes (\$_REQUEST or \$_COOKIE or else)
+  ex.
+  var_dump(\$_REQUEST);
+
+  type '\q' or 'exit', exit debugger.
+
+MESSAGE;
+        eval(Debugger::debuggerEvalCode());
+    }
+
+    /**
+     * for static use
+     */
+    function inCLI()
+    {
+        return defined('STDIN');
+    }
+
+
+    /**
+     * constructor
+     */
+    function Debugger($debugging = false) { $this->__construct($debugging); }
+    function __construct($debugging = false)
+    {
+        $this->debugging = $debugging;
+        $this->i = 0;
+    }
+
+    function _readline($prompt)
+    {
+        $color = $this->debugging ? 'green' : 'cyan';
+        $prompt = $this->color($prompt, $color);
+        if (function_exists('readline')) {
+            return readline($prompt);
+        } else {
+            echo $this->color($prompt, $color);
+            return fgets(STDIN);
+        }
+    }
+
     function handleInput($file = null)
     {
-        static $i = 0;
-        echo 'phpc('.++$i.') >> ';
-        $input = rtrim(fgets(STDIN), "\n"); // 末尾改行不要
+        $input = $this->_readline('phpc('.$this->color(++$this->i, 'red').') >> ');
         if ($input == "exit") {
-            echo "終了します\n";
+            echo $this->color(".... 終了します\n", 'red');
             exit;
-#        } else if (preg_match("/\\p/", $input, $matched)) {
         } else if ($input == "\\p") {
             if (isset($file)) {
-                Debugger::printPosition($file); #, $matched[1], $matched[2]);
+                $this->printPosition($file); #, $matched[1], $matched[2]);
             } else {
-#                echo "\033[1;31m". '現在地表示できません' ."\033[0m\n";
-                cecho('現在地表示できません', 'red');
-#                echo _color('現在地表示できません'). "\n";
+                echo $this->color('現在地表示できません', 'red'). "\n";
             }
             return null;
         } else if ($input == "\\q") {
             return 'break';
-        } else if (empty($input)) { return null;    // 何もしない
+        } else if (empty($input)) {
+            return null;    // 何もしない
         } else {
             return $input;
         }
@@ -72,12 +159,12 @@ class Debugger
         $file_path = $matched[1];
         $current_line = $matched[2];
 
-        $contents = Debugger::getDebuggingFileContents(
+        $contents = $this->getDebuggingFileContents(
             $file_path, $current_line - $back, $current_line + $forward);
 
         echo "\nDEBUGGER -- {$file_path} --\n";
         foreach ($contents as $line=>$value) {
-            $mark = $line == $current_line ? '>' : ' ';
+            $mark = $line == $current_line ? $this->color('>', 'red') : ' ';
             echo " {$mark} {$value}";
         }
     }
@@ -99,6 +186,7 @@ class Debugger
 
     /**
      * ./debug_[日時].php などの形式で、デバッグ用のPHPスクリプトを生成する
+     * readline とかから、実行候補を選択できるようにしたいかなぁ。
      */
     function outputDebuggerScript()
     {
@@ -111,35 +199,19 @@ class Debugger
 
         return $params;
     }
-}
-function cecho($msg, $color = null)
-{
-    $colors = array('red' => 31);
-    if (array_key_exists($color, $colors)) {
-        echo "\033[1;{$colors[$color]}m{$msg}\033[0m\n";
-    } else {
-        echo "{$msg}\n";
+
+    function color($msg, $color = null) {
+        $colors = array(
+            'black'     => 30,
+            'red'       => 31,
+            'green'     => 32,
+            'brown'     => 33,
+            'blue'      => 34,
+            'purple'    => 35,
+            'cyan'      => 36,
+        );
+        if (!array_key_exists($color, $colors)) return $msg;
+        return "\033[1;{$colors[$color]}m{$msg}\033[0m";
     }
 }
-
-echo " --- パラメータ等を入力する\n";
-echo <<<MEMO
-  ex.
-  \$_REQUEST['?????'] = 'hogehoge';
-
-MEMO;
-for ($i=1; $i<100; $i++) {       // 安全装置つき
-    $handle = Debugger::handleInput();
-    if ($handle == "break") {
-        break;
-    } else if (empty($handle)) {
-        continue;   // 何もしない
-    }
-    eval($handle);
-    echo "\n";
-}
-
-array_shift($argv);     // 実行時引数をShiftしておく。
-echo 'execute debugger for > ' . join(' ', $argv) . "\n";
-require_once $argv[0];
 
