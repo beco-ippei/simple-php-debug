@@ -130,7 +130,7 @@ MESSAGE;
 
     function handleInput($file = null)
     {
-        $input = $this->_readline('phpc('.$this->color(++$this->i, 'red').') >> ');
+        $input = $this->_readline('phpc('.++$this->i.') >> ');
         if ($input == "exit") {
             echo $this->color(".... 終了します\n", 'red');
             exit;
