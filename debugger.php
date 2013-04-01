@@ -124,7 +124,7 @@ MESSAGE;
             return readline($prompt);
         } else {
             echo $this->color($prompt, $color);
-            return fgets(STDIN);
+            return rtrim(fgets(STDIN), "\n");   // 末尾改行除去
         }
     }
 
