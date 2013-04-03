@@ -62,12 +62,18 @@ class Debugger
         return $proc;
     }
 
+    function historyFile()
+    {
+        return $_SERVER['HOME'].'/.simple_php_debug_history';
+    }
+
     /**
      * for static use
      */
     function prepare()
     {
-        #TODO: このへんは、クラスor関数化する
+        Debugger::_readline_read_history();
+
         echo <<<MESSAGE
 -- input parmeters as global variables (\$_REQUEST or \$_COOKIE or else)
   ex.
@@ -128,9 +134,37 @@ MESSAGE;
         }
     }
 
+    function _readline_read_history()
+    {
+        if (function_exists('readline_read_history')) {
+            return readline_read_history(Debugger::historyFile());
+        } else {
+            # maybe do nothing...
+        }
+    }
+
+    function _readline_add_history($line)
+    {
+        if (function_exists('readline_add_history')) {
+            return readline_add_history($line);
+        } else {
+            #TODO: どうしよう・・・。
+        }
+    }
+
+    function _readline_write_history()
+    {
+        if (function_exists('readline_write_history')) {
+            return readline_write_history(Debugger::historyFile());
+        } else {
+            # maybe do nothing...
+        }
+    }
+
     function handleInput($file = null)
     {
         $input = $this->_readline('phpc('.++$this->i.') >> ');
+
         if ($input == "exit") {
             echo $this->color(".... 終了します\n", 'red');
             exit;
@@ -146,6 +180,8 @@ MESSAGE;
         } else if (empty($input)) {
             return null;    // 何もしない
         } else {
+            $this->_readline_add_history($input);
+            $this->_readline_write_history();
             return $input;
         }
     }
