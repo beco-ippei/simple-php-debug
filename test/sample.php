@@ -3,6 +3,8 @@ echo "hohogehoge\n";
 
 $_REQUEST['hoge'] = 'fooooooo';
 
+header('Cookie: hoge');
+
 eval(Debugger::get());
 var_dump($_REQUEST);
 
