@@ -4,9 +4,14 @@ if (!Debugger::inCLI()) return;
 echo "load debugger....\n";
 Debugger::prepare();
 
-array_shift($argv);     // 実行時引数をShiftしておく。
+// 実行時引数をShiftしておく
+array_shift($argv);
 echo 'execute debugger for > ' . join(' ', $argv) . "\n";
-require_once $argv[0];
+
+$file = $argv[0];
+chdir(dirname($file));
+
+require_once $file;
 
 #TODO: 終了時にもなにかできるようにした方がいいかも
 #      で、HTTPレスポンスが変数に入っていて見れたり、その他。
