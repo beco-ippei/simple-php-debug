@@ -11,7 +11,7 @@ echo 'execute debugger for > ' . join(' ', $argv) . "\n";
 $file = $argv[0];
 chdir(dirname($file));
 
-require_once $file;
+require_once basename($file);
 
 #TODO: 終了時にもなにかできるようにした方がいいかも
 #      で、HTTPレスポンスが変数に入っていて見れたり、その他。
