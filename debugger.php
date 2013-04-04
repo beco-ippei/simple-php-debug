@@ -166,6 +166,7 @@ MESSAGE;
         }
     }
 
+    #TODO コマンドの処理をもう少し綺麗にしたい
     function handleInput($file = null)
     {
         $input = $this->_readline('phpc('.++$this->i.') >> ');
@@ -182,6 +183,9 @@ MESSAGE;
             return null;
         } else if ($input == "\\q") {
             return 'break';
+        } else if (preg_match('/^\\\query\s([^\s]+)/', $input, $matched)) {
+            $this->_parseQueryString($matched[1]);
+            return null;    // 処理済み
         } else if (empty($input)) {
             return null;    // 何もしない
         } else {
@@ -189,6 +193,16 @@ MESSAGE;
             $this->_readline_write_history();
             return $input;
         }
+    }
+
+    function _parseQueryString($query)
+    {
+        $queries = explode('&', $query);
+        foreach ($queries as $param) {
+            list($key, $val) = explode('=', $param, 2);
+            $_REQUEST[$key] = $val;
+        }
+        #NOTE: パラメータは後に来るもので上書き
     }
 
     function printPosition($evaled_file, $back = 5, $forward = 5)
