@@ -35,9 +35,9 @@ Usage (ja)
 eval(Debugger::get());
 ```
 
-実行したいプログラム(例：app/sp/index.php)を引数に指定して、debugger.php を実行します。
+実行したいプログラム(例：test/sample.php)を引数に指定して、debugger.php を実行します。
 ```
-> php debugger.php app/sp/index.php
+> php debugger.php test/sample.php
 ```
 最初に prepare モードでpromptが起動します。
 ```
@@ -96,10 +96,69 @@ array(3) {
 ```
 
 準備が完了し、メインのプログラムを実行できる状態になったら、prepareモードを抜けます。
+引数で指定したプログラムが実行され、ブレイクポイント(```eval(Debugger::get())```)でデバッガが起動します。
 ```
 phpc(5) >> \q
+execute debugger for > test/sample.php
+# この辺りは、"test/sample.php"の実行結果があれば、何か表示されたりします。 ############
+PHP Warning:  Cannot modify header information - headers already sent by (output started at /work/dev/simple-php-debug/debugger.php:
+4) in /work/dev/simple-php-debug/test/sample.php on line 6
+# 実行結果ここまで ###########################
+
+DEBUGGER -- /[path-to-execute-file]/test/sample.php --
+   
+   $_REQUEST['hoge'] = 'fooooooo';
+   
+   header('Cookie: hoge');
+   
+ > eval(Debugger::get());
+   var_dump($_REQUEST);
+   
+   if (array_key_exists('id', $_REQUEST)) {
+       $id = $_REQUEST['id'];
+       echo "id = ${id} !!!!\n";
+phpc(1) >> 
+```
+上の例では、```header('Cookie: hoge');```の次のコードで止まって、プロンプトが起動します。
+
+変数のスコープは```eval()```の実行と同じになり、任意のコードを入力できます。
+```
+phpc(2) >> $hoge = 'なにか書いてみる';
+phpc(3) >> $_REQUEST['hoge'] = "hoge_value is {$hoge}";
+phpc(4) >> var_dump($_REQUEST);
+array(4) {
+  ["page"]=>
+  string(5) "video"
+  ["id"]=>
+  string(5) "12345"
+  ["full_screen"]=>
+  string(2) "on"
+  ["hoge"]=>
+  string(22) "hoge_value is なにか書いてみる"
+}
 ```
 
+その場で新しいファイルを読み込んで実行することもできます。
+```
+phpc(5) >> require_once('lib/DB.php');
+phpc(6) >> $result = DB::query("SELECT * FROM users WHERE id = '{$_REQUEST['id']}'");
+phpc(7) >> var_dump($result);
+array(3) {
+  ["id"]=>
+  int(12345)
+  ["password"]=>
+  string(24) "hogehogehogehogehogehoge"
+  ["name"]=>
+  string(5) "beco-ippei"
+}
+```
+prepareモード時と同様に、```\q```でデバッガを終了して以降の処理が再開されます。
+入力した値は、デバッガを終了した後でも残ります。
+
+すべての処理が終了すると、postCodeモードでデバッガが起動します。
+処理結果を見たい場合などで利用してください。
+
+```exit```を入力するか、```\q```で postCodeモードを終了し、デバッガの処理が終了します。
 
 
 License
