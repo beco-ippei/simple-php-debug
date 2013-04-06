@@ -81,8 +81,14 @@ class Debugger
 
         echo <<<MESSAGE
 -- input parmeters as global variables (\$_REQUEST or \$_COOKIE or else)
-  ex.
-  \$_REQUEST['?????'] = 'hogehoge';
+  ex.  \$_REQUEST['?????'] = 'hogehoge';
+
+Commands
+  \query [query-strings]
+        parse query-strings to \$_REQUEST
+        ex. "\query id=234&type=hoge&flag=1
+        -> \$_REQUEST == array('id'=>234, 'type'=>'hoge', 'flag'=>1)
+  \q    finish prepare and run codes.
 
   if ready, type '\q'
 
@@ -115,7 +121,6 @@ MESSAGE;
     {
         return defined('STDIN');
     }
-
 
     /**
      * constructor
@@ -269,4 +274,3 @@ MESSAGE;
         return "\033[1;{$colors[$color]}m{$msg}\033[0m";
     }
 }
-
