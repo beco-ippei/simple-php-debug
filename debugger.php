@@ -1,7 +1,8 @@
 <?php
 if (!Debugger::inCLI()) return;
-
 echo "load debugger....\n";
+
+register_shutdown_function('Debugger::postCode');
 Debugger::prepare();
 
 // 実行時引数をShiftしておく
@@ -13,9 +14,6 @@ chdir(dirname($file));
 
 require_once basename($file);
 
-#TODO: 終了時にもなにかできるようにした方がいいかも
-#      で、HTTPレスポンスが変数に入っていて見れたり、その他。
-Debugger::postCode();
 exit(0);
 
 /**
@@ -122,7 +120,6 @@ MESSAGE;
      */
     function postCode()
     {
-        #TODO: このへんは、クラスor関数化する
         echo <<<MESSAGE
 -- if watch global variables, you can exec any codes (\$_REQUEST or \$_COOKIE or else)
   ex.
