@@ -53,6 +53,7 @@ class Debugger
             $proc .= "\$debugger->printPosition(__FILE__);\n";
         }
         $proc .= '
+        set_error_handler("Debugger::handleError");
         for ($i=1; $i<100; $i++) {       // 安全装置つき
             $handle = $debugger->handleInput(__FILE__);
             if ($handle == "break") {
@@ -63,8 +64,27 @@ class Debugger
             eval($handle);
             echo "\n";
         }
+        restore_error_handler();
         ';
         return $proc;
+    }
+
+    /**
+     * int $no, string $str [, string $file [, int $line [, array $context ]]]
+     */
+    function handleError($no, $str, $file = null, $line = null, $context = null)
+    {
+        $msg = "Error({$no}) {$str}";
+        if (isset($file)) {
+            $msg .= " at [{$file}]";
+            if (isset($line)) $msg .= " on line {$line}";
+        }
+
+        echo Debugger::color("{$msg}\n");
+#        if (isset($context)) {
+#            var_dump($context);
+#        }
+        return true;
     }
 
     function historyFile()
